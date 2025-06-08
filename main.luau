@@ -69,6 +69,7 @@ for i, chart in pairs(charts) do
     chart_folder:SetAttribute("Stars", chart:getStarDifficulty())
     
     local chart_str = roblox.Instance.new("StringValue")
+    chart_str.Name = "Chart"
     chart_str.Value = chart:getMapString()
 
     chart_str.Parent = chart_folder
