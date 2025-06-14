@@ -48,7 +48,7 @@ end
 function Utils.getOsuFiles(dir: string)
     local files = {}
 	for _, v in pairs(fs.readDir(dir)) do
-		if not fs.isFile(Utils.SAMPLE_DIRECTORY_PATH .. "/" .. v) then
+		if not fs.isFile(dir .. "/" .. v) then
 			continue
 		end
 
