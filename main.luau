@@ -1,6 +1,6 @@
-local stdio = require("@lune/stdio")
-local roblox = require("@lune/roblox")
 local fs = require("@lune/fs")
+local roblox = require("@lune/roblox")
+local stdio = require("@lune/stdio")
 
 local Chart = require("./Chart.luau")
 local Utils = require("./Utils.luau")
@@ -9,7 +9,11 @@ stdio.write("Welcome to RV9SSAS!\n\n")
 
 local map_id = stdio.prompt("text", "Song ID:", "136")
 
-local osu_file_path: string = stdio.prompt("text", ".osu file path (any chart):", Utils.DEFAULT_PATH)
+local song_collection_dir: string =
+	stdio.prompt("text", "Song directory:", Utils.SAMPLE_DIRECTORY_PATH)
+local map_files: { string } = Utils.getOsuFiles(song_collection_dir)
+
+local osu_file_path: string = map_files[1]
 local file_content: string = fs.readFile(osu_file_path)
 
 local lines = Utils.split(file_content, "\n")
@@ -39,29 +43,38 @@ local song_volume = stdio.prompt("text", "Volume:", "1")
 
 -- individual charts
 local charts = {}
-
-local chart_count = tonumber(stdio.prompt("text", "Chart count (w/o rates):", "2"))
+local chart_count = #map_files
+local _override = stdio.prompt("confirm", "override?")
 
 stdio.write("\n")
-for i = 1, chart_count do
-	local chart_path: string = stdio.prompt("text", "Chart filepath:", Utils.DEFAULT_PATH)
-	local chart_file_content: string = fs.readFile(chart_path)
 
+for i = 1, chart_count do
+	stdio.write(string.format("\n(%d/%d)\n", i, chart_count))
+	local chart_path: string = nil
+	if _override then
+		chart_path = stdio.prompt("text", "Chart filepath:", Utils.DEFAULT_PATH)
+	else
+		chart_path = map_files[i]
+	end
+
+	local chart_file_content: string = fs.readFile(chart_path)
 	local chartfile_lines = Utils.split(chart_file_content, "\n")
 
-	local difficulty_index: number = Utils.findDesiredLineIndex(chartfile_lines, "%[Difficulty%]")
+	local difficulty_index: number =
+		Utils.findDesiredLineIndex(chartfile_lines, "%[Difficulty%]")
 
-    local chart_name = string.sub(lines[metadata_index + 6], string.len("Version:") + 1)
-    local key_count = tonumber(string.sub(lines[difficulty_index + 2], string.len("CircleSize:") + 1))
-    local object_count = Utils.objectCountOf(chartfile_lines)
-    local star_difficulty = tonumber(stdio.prompt("text", "Star difficulty:", "6.28"))
-    local map_string = stdio.prompt("text", "Compressed string:", Utils.SAMPLE_MAP_STRING)
-    
-    charts[i] = Chart.new(chart_name, key_count, object_count, star_difficulty, map_string)
-	stdio.write("obj count: "..object_count.."\n")
+	local chart_name = string.sub(lines[metadata_index + 6], string.len("Version:") + 1)
+	local key_count =
+		tonumber(string.sub(lines[difficulty_index + 2], string.len("CircleSize:") + 1))
+	local object_count = Utils.objectCountOf(chartfile_lines)
+	local star_difficulty = tonumber(stdio.prompt("text", "Star difficulty:", "6.28"))
+	local map_string = stdio.prompt("text", "Compressed string:", Utils.SAMPLE_MAP_STRING)
+
+	charts[i] = Chart.new(chart_name, key_count, object_count, star_difficulty, map_string)
+	stdio.write("obj count: " .. object_count .. "\n")
 end
 
-stdio.write("-[CREATING MAP MODEL]-\n")
+stdio.write("\n-[CREATING MAP MODEL]-\n")
 
 local song_folder = roblox.Instance.new("Folder")
 song_folder.Name = string.format("[%s] %s - %s", map_id, artist_name, song_name)
